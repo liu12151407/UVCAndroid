@@ -193,20 +193,15 @@ public class MainActivity extends AppCompatActivity {
 
     private void setListeners() {
         mBinding.fabPicture.setOnClickListener(v -> {
-            XXPermissions.with(this)
-                    .permission(Manifest.permission.MANAGE_EXTERNAL_STORAGE)
-                    .request((permissions, all) -> {
-                        takePicture();
-                    });
+            XXPermissions.with(this).permission(Manifest.permission.MANAGE_EXTERNAL_STORAGE).request((permissions, all) -> {
+                takePicture();
+            });
         });
 
         mBinding.fabVideo.setOnClickListener(v -> {
-            XXPermissions.with(this)
-                    .permission(Manifest.permission.MANAGE_EXTERNAL_STORAGE)
-                    .permission(Manifest.permission.RECORD_AUDIO)
-                    .request((permissions, all) -> {
-                        toggleVideoRecord(!mIsRecording);
-                    });
+            XXPermissions.with(this).permission(Manifest.permission.MANAGE_EXTERNAL_STORAGE).permission(Manifest.permission.RECORD_AUDIO).request((permissions, all) -> {
+                toggleVideoRecord(!mIsRecording);
+            });
         });
     }
 
@@ -283,22 +278,19 @@ public class MainActivity extends AppCompatActivity {
         }
 
         if (mCameraHelper != null) {
-            mCameraHelper.setPreviewConfig(
-                    mCameraHelper.getPreviewConfig().setRotation(mPreviewRotation));
+            mCameraHelper.setPreviewConfig(mCameraHelper.getPreviewConfig().setRotation(mPreviewRotation));
         }
     }
 
     private void flipHorizontally() {
         if (mCameraHelper != null) {
-            mCameraHelper.setPreviewConfig(
-                    mCameraHelper.getPreviewConfig().setMirror(MirrorMode.MIRROR_HORIZONTAL));
+            mCameraHelper.setPreviewConfig(mCameraHelper.getPreviewConfig().setMirror(MirrorMode.MIRROR_HORIZONTAL));
         }
     }
 
     private void flipVertically() {
         if (mCameraHelper != null) {
-            mCameraHelper.setPreviewConfig(
-                    mCameraHelper.getPreviewConfig().setMirror(MirrorMode.MIRROR_VERTICAL));
+            mCameraHelper.setPreviewConfig(mCameraHelper.getPreviewConfig().setMirror(MirrorMode.MIRROR_VERTICAL));
         }
     }
 
@@ -320,7 +312,9 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void clearCameraHelper() {
-        if (DEBUG) Log.v(TAG, "clearCameraHelper:");
+        if (DEBUG) {
+            Log.v(TAG, "clearCameraHelper:");
+        }
         if (mCameraHelper != null) {
             mCameraHelper.release();
             mCameraHelper = null;
@@ -371,25 +365,27 @@ public class MainActivity extends AppCompatActivity {
      * @param device
      */
     protected void selectDevice(UsbDevice device) {
-        if (DEBUG) Log.v(TAG, "selectDevice:device=" + device.getDeviceName());
+        if (DEBUG) {
+            Log.v(TAG, "selectDevice:device=" + device.getDeviceName());
+        }
 
-        XXPermissions.with(this)
-                .permission(Manifest.permission.CAMERA)
-                .request((permissions, all) -> {
-                    mIsCameraConnected = false;
-                    updateUIControls();
+        XXPermissions.with(this).permission(Manifest.permission.CAMERA).request((permissions, all) -> {
+            mIsCameraConnected = false;
+            updateUIControls();
 
-                    if (mCameraHelper != null) {
-                        // 通过UsbDevice对象，尝试获取设备权限
-                        mCameraHelper.selectDevice(device);
-                    }
-                });
+            if (mCameraHelper != null) {
+                // 通过UsbDevice对象，尝试获取设备权限
+                mCameraHelper.selectDevice(device);
+            }
+        });
     }
 
     private class MyCameraHelperCallback implements ICameraHelper.StateCallback {
         @Override
         public void onAttach(UsbDevice device) {
-            if (DEBUG) Log.v(TAG, "onAttach:device=" + device.getDeviceName());
+            if (DEBUG) {
+                Log.v(TAG, "onAttach:device=" + device.getDeviceName());
+            }
 
             attachNewDevice(device);
         }
@@ -399,22 +395,25 @@ public class MainActivity extends AppCompatActivity {
          */
         @Override
         public void onDeviceOpen(UsbDevice device, boolean isFirstOpen) {
-            if (DEBUG) Log.v(TAG, "onDeviceOpen:device=" + device.getDeviceName());
+            if (DEBUG) {
+                Log.v(TAG, "onDeviceOpen:device=" + device.getDeviceName());
+            }
 
             mCameraHelper.openCamera(getSavedPreviewSize());
 
             mCameraHelper.setButtonCallback(new IButtonCallback() {
                 @Override
                 public void onButton(int button, int state) {
-                    Toast.makeText(MainActivity.this, "onButton(button=" + button + "; " +
-                            "state=" + state + ")", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(MainActivity.this, "onButton(button=" + button + "; " + "state=" + state + ")", Toast.LENGTH_SHORT).show();
                 }
             });
         }
 
         @Override
         public void onCameraOpen(UsbDevice device) {
-            if (DEBUG) Log.v(TAG, "onCameraOpen:device=" + device.getDeviceName());
+            if (DEBUG) {
+                Log.v(TAG, "onCameraOpen:device=" + device.getDeviceName());
+            }
             mCameraHelper.startPreview();
 
             // After connecting to the camera, you can get preview size of the camera
@@ -433,7 +432,9 @@ public class MainActivity extends AppCompatActivity {
 
         @Override
         public void onCameraClose(UsbDevice device) {
-            if (DEBUG) Log.v(TAG, "onCameraClose:device=" + device.getDeviceName());
+            if (DEBUG) {
+                Log.v(TAG, "onCameraClose:device=" + device.getDeviceName());
+            }
 
             if (mIsRecording) {
                 toggleVideoRecord(false);
@@ -451,12 +452,16 @@ public class MainActivity extends AppCompatActivity {
 
         @Override
         public void onDeviceClose(UsbDevice device) {
-            if (DEBUG) Log.v(TAG, "onDeviceClose:device=" + device.getDeviceName());
+            if (DEBUG) {
+                Log.v(TAG, "onDeviceClose:device=" + device.getDeviceName());
+            }
         }
 
         @Override
         public void onDetach(UsbDevice device) {
-            if (DEBUG) Log.v(TAG, "onDetach:device=" + device.getDeviceName());
+            if (DEBUG) {
+                Log.v(TAG, "onDetach:device=" + device.getDeviceName());
+            }
 
             if (device.equals(mUsbDevice)) {
                 mUsbDevice = null;
@@ -465,7 +470,9 @@ public class MainActivity extends AppCompatActivity {
 
         @Override
         public void onCancel(UsbDevice device) {
-            if (DEBUG) Log.v(TAG, "onCancel:device=" + device.getDeviceName());
+            if (DEBUG) {
+                Log.v(TAG, "onCancel:device=" + device.getDeviceName());
+            }
 
             if (device.equals(mUsbDevice)) {
                 mUsbDevice = null;
@@ -525,17 +532,13 @@ public class MainActivity extends AppCompatActivity {
         String key = getString(R.string.saved_preview_size) + USBMonitor.getProductKey(mUsbDevice);
         Gson gson = new Gson();
         String json = gson.toJson(size);
-        getPreferences(MODE_PRIVATE)
-                .edit()
-                .putString(key, json)
-                .apply();
+        getPreferences(MODE_PRIVATE).edit().putString(key, json).apply();
     }
 
     private void setCustomImageCaptureConfig() {
-//        mCameraHelper.setImageCaptureConfig(
-//                mCameraHelper.getImageCaptureConfig().setCaptureMode(ImageCapture.CAPTURE_MODE_MAXIMIZE_QUALITY));
-        mCameraHelper.setImageCaptureConfig(
-                mCameraHelper.getImageCaptureConfig().setJpegCompressionQuality(90));
+
+        mCameraHelper.setImageCaptureConfig(mCameraHelper.getImageCaptureConfig().setCaptureMode(ImageCapture.CAPTURE_MODE_MAXIMIZE_QUALITY));
+        mCameraHelper.setImageCaptureConfig(mCameraHelper.getImageCaptureConfig().setJpegCompressionQuality(90));
     }
 
     public void takePicture() {
@@ -545,14 +548,11 @@ public class MainActivity extends AppCompatActivity {
 
         try {
             File file = new File(SaveHelper.getSavePhotoPath());
-            ImageCapture.OutputFileOptions options =
-                    new ImageCapture.OutputFileOptions.Builder(file).build();
+            ImageCapture.OutputFileOptions options = new ImageCapture.OutputFileOptions.Builder(file).build();
             mCameraHelper.takePicture(options, new ImageCapture.OnImageCaptureCallback() {
                 @Override
                 public void onImageSaved(@NonNull ImageCapture.OutputFileResults outputFileResults) {
-                    Toast.makeText(MainActivity.this,
-                            "save \"" + UriHelper.getPath(MainActivity.this, outputFileResults.getSavedUri()) + "\"",
-                            Toast.LENGTH_SHORT).show();
+                    Toast.makeText(MainActivity.this, "save \"" + UriHelper.getPath(MainActivity.this, outputFileResults.getSavedUri()) + "\"", Toast.LENGTH_SHORT).show();
                 }
 
                 @Override
@@ -589,18 +589,14 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void setCustomVideoCaptureConfig() {
-        mCameraHelper.setVideoCaptureConfig(
-                mCameraHelper.getVideoCaptureConfig()
+        mCameraHelper.setVideoCaptureConfig(mCameraHelper.getVideoCaptureConfig()
 //                        .setAudioCaptureEnable(false)
-                        .setBitRate((int) (1024 * 1024 * 25 * 0.25))
-                        .setVideoFrameRate(25)
-                        .setIFrameInterval(1));
+                .setBitRate((int) (1024 * 1024 * 25 * 0.25)).setVideoFrameRate(25).setIFrameInterval(1));
     }
 
     private void startRecord() {
         File file = new File(SaveHelper.getSaveVideoPath());
-        VideoCapture.OutputFileOptions options =
-                new VideoCapture.OutputFileOptions.Builder(file).build();
+        VideoCapture.OutputFileOptions options = new VideoCapture.OutputFileOptions.Builder(file).build();
         mCameraHelper.startRecording(options, new VideoCapture.OnVideoCaptureCallback() {
             @Override
             public void onStart() {
@@ -611,10 +607,7 @@ public class MainActivity extends AppCompatActivity {
             public void onVideoSaved(@NonNull VideoCapture.OutputFileResults outputFileResults) {
                 toggleVideoRecord(false);
 
-                Toast.makeText(
-                        MainActivity.this,
-                        "save \"" + UriHelper.getPath(MainActivity.this, outputFileResults.getSavedUri()) + "\"",
-                        Toast.LENGTH_SHORT).show();
+                Toast.makeText(MainActivity.this, "save \"" + UriHelper.getPath(MainActivity.this, outputFileResults.getSavedUri()) + "\"", Toast.LENGTH_SHORT).show();
             }
 
             @Override
