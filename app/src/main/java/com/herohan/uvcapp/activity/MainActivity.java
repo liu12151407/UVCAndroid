@@ -171,23 +171,23 @@ public class MainActivity extends AppCompatActivity {
 
     @Override
     public boolean onPrepareOptionsMenu(Menu menu) {
-        if (mIsCameraConnected) {
-            menu.findItem(R.id.action_control).setVisible(true);
-            menu.findItem(R.id.action_safely_eject).setVisible(true);
-            menu.findItem(R.id.action_video_format).setVisible(true);
-            menu.findItem(R.id.action_rotate_90_CW).setVisible(true);
-            menu.findItem(R.id.action_rotate_90_CCW).setVisible(true);
-            menu.findItem(R.id.action_flip_horizontally).setVisible(true);
-            menu.findItem(R.id.action_flip_vertically).setVisible(true);
-        } else {
-            menu.findItem(R.id.action_control).setVisible(false);
-            menu.findItem(R.id.action_safely_eject).setVisible(false);
-            menu.findItem(R.id.action_video_format).setVisible(false);
-            menu.findItem(R.id.action_rotate_90_CW).setVisible(false);
-            menu.findItem(R.id.action_rotate_90_CCW).setVisible(false);
-            menu.findItem(R.id.action_flip_horizontally).setVisible(false);
-            menu.findItem(R.id.action_flip_vertically).setVisible(false);
-        }
+//        if (mIsCameraConnected) {
+//            menu.findItem(R.id.action_control).setVisible(true);
+//            menu.findItem(R.id.action_safely_eject).setVisible(true);
+//            menu.findItem(R.id.action_video_format).setVisible(true);
+//            menu.findItem(R.id.action_rotate_90_CW).setVisible(true);
+//            menu.findItem(R.id.action_rotate_90_CCW).setVisible(true);
+//            menu.findItem(R.id.action_flip_horizontally).setVisible(true);
+//            menu.findItem(R.id.action_flip_vertically).setVisible(true);
+//        } else {
+//            menu.findItem(R.id.action_control).setVisible(false);
+//            menu.findItem(R.id.action_safely_eject).setVisible(false);
+//            menu.findItem(R.id.action_video_format).setVisible(false);
+//            menu.findItem(R.id.action_rotate_90_CW).setVisible(false);
+//            menu.findItem(R.id.action_rotate_90_CCW).setVisible(false);
+//            menu.findItem(R.id.action_flip_horizontally).setVisible(false);
+//            menu.findItem(R.id.action_flip_vertically).setVisible(false);
+//        }
         return super.onPrepareOptionsMenu(menu);
     }
 
@@ -495,7 +495,7 @@ public class MainActivity extends AppCompatActivity {
                 mBinding.tvConnectUSBCameraTip.setVisibility(View.GONE);
 
                 mBinding.fabPicture.setVisibility(View.VISIBLE);
-                mBinding.fabVideo.setVisibility(View.VISIBLE);
+//                mBinding.fabVideo.setVisibility(View.VISIBLE);
 
                 // Update record button
                 int colorId = R.color.WHITE;
