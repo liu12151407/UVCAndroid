@@ -12,10 +12,13 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 
+import com.blankj.utilcode.util.LogUtils;
 import com.google.gson.Gson;
 import com.herohan.uvcapp.ImageCapture;
 import com.herohan.uvcapp.VideoCapture;
+import com.herohan.uvcapp.utils.UsbHelper;
 import com.hjq.permissions.XXPermissions;
+import com.hoho.android.usbserial.driver.UsbSerialDriver;
 import com.serenegiant.opengl.renderer.MirrorMode;
 import com.herohan.uvcapp.CameraHelper;
 import com.herohan.uvcapp.ICameraHelper;
@@ -41,8 +44,10 @@ import android.widget.Toast;
 
 import java.io.File;
 import java.text.DecimalFormat;
+import java.util.List;
 import java.util.Timer;
 import java.util.TimerTask;
+import java.util.function.Consumer;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -84,7 +89,7 @@ public class MainActivity extends AppCompatActivity {
     private CameraControlsDialogFragment mControlsDialog;
     private DeviceListDialogFragment mDeviceListDialog;
     private VideoFormatDialogFragment mFormatDialog;
-
+    private String ckTag="==UsbHelper==";
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -99,10 +104,10 @@ public class MainActivity extends AppCompatActivity {
         setListeners();
     }
 
+
     @Override
     protected void onNewIntent(Intent intent) {
         super.onNewIntent(intent);
-
         if (intent.getAction().equals(UsbManager.ACTION_USB_DEVICE_ATTACHED)) {
             if (!mIsCameraConnected) {
                 mUsbDevice = intent.getParcelableExtra(UsbManager.EXTRA_DEVICE);
@@ -201,6 +206,15 @@ public class MainActivity extends AppCompatActivity {
             XXPermissions.with(this).permission(Manifest.permission.MANAGE_EXTERNAL_STORAGE).permission(Manifest.permission.RECORD_AUDIO).request((permissions, all) -> {
                 toggleVideoRecord(!mIsRecording);
             });
+        });
+        mBinding.fabCktx.setOnClickListener(v->{
+            List<UsbSerialDriver> items = UsbHelper.Companion.getInstance().availableDrivers(this);
+            LogUtils.i(ckTag,items.size());
+            if (items.size()>0) {
+                UsbHelper.Companion.getInstance().setDriver(items.get(0));
+                boolean isOpen = UsbHelper.Companion.getInstance().open();
+                LogUtils.i(ckTag,"串口打开",isOpen);
+            }
         });
     }
 
