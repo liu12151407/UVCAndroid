@@ -29,6 +29,7 @@ import com.herohan.uvcapp.databinding.ActivityMainBinding
 import com.herohan.uvcapp.fragment.CameraControlsDialogFragment
 import com.herohan.uvcapp.fragment.DeviceListDialogFragment
 import com.herohan.uvcapp.fragment.VideoFormatDialogFragment
+import com.herohan.uvcapp.utils.HexUtils
 import com.herohan.uvcapp.utils.SaveHelper
 import com.hjq.permissions.XXPermissions
 import com.hoho.android.usbserial.driver.UsbSerialPort
@@ -174,13 +175,14 @@ class MainActivity : AppCompatActivity(), SerialInputOutputManager.Listener {
             tryOpen()
         }
     }
+
     //串口方法
-    private var port:UsbSerialPort?=null
-    private fun tryOpen(){
+    private var port: UsbSerialPort? = null
+    private fun tryOpen() {
         // Find all available drivers from attached devices.
         val manager = getSystemService(USB_SERVICE) as UsbManager
         val availableDrivers = UsbSerialProber.getDefaultProber().findAllDrivers(manager)
-        LogUtils.i(ckTag,"availableDrivers",availableDrivers.size)
+        LogUtils.i(ckTag, "availableDrivers", availableDrivers.size)
         if (availableDrivers.isEmpty()) {
             return
         }
@@ -194,7 +196,11 @@ class MainActivity : AppCompatActivity(), SerialInputOutputManager.Listener {
         port?.open(connection)
         port?.setParameters(9600, 8, UsbSerialPort.STOPBITS_1, UsbSerialPort.PARITY_NONE)
         LogUtils.i(ckTag, "open", port?.isOpen)
+        //监听输出数据
+        val usbIoManager = SerialInputOutputManager(port, this)
+        usbIoManager.start()
     }
+
     private fun showCameraControlsDialog() {
         if (mControlsDialog == null) {
             mControlsDialog = CameraControlsDialogFragment(mCameraHelper)
@@ -650,10 +656,37 @@ class MainActivity : AppCompatActivity(), SerialInputOutputManager.Listener {
      * 串口监听
      */
     override fun onNewData(data: ByteArray?) {
-        LogUtils.i(ckTag,"data",data)
+        val hexStr= HexUtils.byteArrayToHexStr(data)
+        LogUtils.i(ckTag, "data", hexStr)
+        //放大
+        //4B310D0A
+        val fd = "4B310D0A"
+        //缩小
+        //4B330D0A
+        val sx = "4B330D0A"
+        //拍照
+        //4B320D0A
+        val pz ="4B320D0A"
+        when (hexStr) {
+            fd -> {
+                LogUtils.i(ckTag, "放大")
+            }
+
+            sx -> {
+                LogUtils.i(ckTag, "缩小")
+            }
+
+            pz -> {
+                LogUtils.i(ckTag, "拍照")
+            }
+
+            else -> {
+                LogUtils.i(ckTag, "未识别")
+            }
+        }
     }
 
     override fun onRunError(e: java.lang.Exception?) {
-        LogUtils.e(ckTag,e?.message)
+        LogUtils.e(ckTag, e?.message)
     }
 }
