@@ -3,6 +3,7 @@ package com.herohan.uvcapp.activity
 import android.Manifest
 import android.content.Intent
 import android.content.res.ColorStateList
+import android.graphics.Matrix
 import android.graphics.SurfaceTexture
 import android.hardware.usb.UsbDevice
 import android.hardware.usb.UsbManager
@@ -656,7 +657,7 @@ class MainActivity : AppCompatActivity(), SerialInputOutputManager.Listener {
      * 串口监听
      */
     override fun onNewData(data: ByteArray?) {
-        val hexStr= HexUtils.byteArrayToHexStr(data)
+        val hexStr = HexUtils.byteArrayToHexStr(data)
         LogUtils.i(ckTag, "data", hexStr)
         //放大
         //4B310D0A
@@ -666,14 +667,16 @@ class MainActivity : AppCompatActivity(), SerialInputOutputManager.Listener {
         val sx = "4B330D0A"
         //拍照
         //4B320D0A
-        val pz ="4B320D0A"
+        val pz = "4B320D0A"
         when (hexStr) {
             fd -> {
                 LogUtils.i(ckTag, "放大")
+                zoomIn()
             }
 
             sx -> {
                 LogUtils.i(ckTag, "缩小")
+                zoomOut()
             }
 
             pz -> {
@@ -685,6 +688,51 @@ class MainActivity : AppCompatActivity(), SerialInputOutputManager.Listener {
                 LogUtils.i(ckTag, "未识别")
             }
         }
+    }
+
+    // 放大的点击事件
+    fun zoomIn() {
+        // 播放视频的view
+        val textureView = mBinding?.viewMainPreview
+        val matrix = Matrix()
+        // 为了重复点击能在之前基础上放大
+        textureView?.getTransform(matrix)
+
+        // sx/sy  -1~1 代表缩小  >1或<-1 代表放大
+        // 其中，负值还代表根据中心轴翻转
+        // 第一、第二个参数，代表放大还是缩小，sx/sy
+        // 第三、第四个参数，代表缩放的原点，下面是以中心点缩放
+        // postScale（）和preScale（） 效果相同，不知道有什么区别
+        matrix.postScale(
+            2f,
+            2f,
+            (mBinding?.viewMainPreview!!.width / 2).toFloat(),
+            (mBinding?.viewMainPreview!!.height / 2).toFloat()
+        )
+        // 设置矩阵
+        textureView?.setTransform(matrix)
+        // 刷新view
+        textureView?.postInvalidate()
+    }
+
+    // 缩小的点击事件
+    fun zoomOut() {
+        // 播放视频的view
+        val textureView = mBinding?.viewMainPreview
+        val matrix = Matrix()
+        // 为了重复点击能在之前基础上放大
+        textureView?.getTransform(matrix)
+        // 0.5 代表画面缩小回之前的一半，对应上面放大2倍的操作
+        matrix.postScale(
+            0.5f,
+            0.5f,
+            (mBinding?.viewMainPreview!!.width / 2).toFloat(),
+            (mBinding?.viewMainPreview!!.height / 2).toFloat()
+        )
+        // 设置矩阵
+        textureView?.setTransform(matrix)
+        // 刷新view
+        textureView?.postInvalidate()
     }
 
     override fun onRunError(e: java.lang.Exception?) {
