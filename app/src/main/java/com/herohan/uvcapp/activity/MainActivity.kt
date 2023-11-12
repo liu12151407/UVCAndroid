@@ -678,6 +678,7 @@ class MainActivity : AppCompatActivity(), SerialInputOutputManager.Listener {
 
             pz -> {
                 LogUtils.i(ckTag, "拍照")
+                takePicture()
             }
 
             else -> {
