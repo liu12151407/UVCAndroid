@@ -76,13 +76,22 @@
             android:layout_marginBottom="16dp"
             android:visibility="invisible"
             app:srcCompat="@drawable/ic_switch_camera" />
+
         <com.google.android.material.floatingactionbutton.FloatingActionButton
-            android:id="@+id/fabCktx"
+            android:id="@+id/fabFd"
+            style="@style/MainFloatingActionButton"
+            android:layout_above="@id/fabSx"
+            android:layout_marginStart="@dimen/fab_margin"
+            android:layout_marginBottom="16dp"
+            app:srcCompat="@mipmap/sf_fd" />
+
+        <com.google.android.material.floatingactionbutton.FloatingActionButton
+            android:id="@+id/fabSx"
             style="@style/MainFloatingActionButton"
             android:layout_alignParentLeft="true"
             android:layout_alignParentBottom="true"
             android:layout_marginStart="@dimen/fab_margin"
             android:layout_marginBottom="16dp"
-            app:srcCompat="@drawable/ic_action_usb" />
+            app:srcCompat="@mipmap/sf_sx" />
     </RelativeLayout>
 </LinearLayout>

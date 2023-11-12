@@ -78,6 +78,7 @@ class MainActivity : AppCompatActivity(), SerialInputOutputManager.Listener {
         setSupportActionBar(mBinding!!.toolbar)
         checkCameraHelper()
         setListeners()
+        tryOpen()
     }
 
     override fun onNewIntent(intent: Intent) {
@@ -172,8 +173,11 @@ class MainActivity : AppCompatActivity(), SerialInputOutputManager.Listener {
             ).permission(Manifest.permission.RECORD_AUDIO)
                 .request { permissions: List<String?>?, all: Boolean -> toggleVideoRecord(!mIsRecording) }
         }
-        mBinding?.fabCktx?.setOnClickListener { v: View? ->
-            tryOpen()
+        mBinding?.fabFd?.setOnClickListener { v: View? ->
+            zoomIn()
+        }
+        mBinding?.fabSx?.setOnClickListener { v: View? ->
+            zoomOut()
         }
     }
 
