@@ -16,6 +16,7 @@ import android.view.TextureView.SurfaceTextureListener
 import android.view.View
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
+import com.blankj.utilcode.util.LogUtils
 import com.google.gson.Gson
 import com.herohan.uvcapp.CameraHelper
 import com.herohan.uvcapp.ICameraHelper
@@ -30,6 +31,8 @@ import com.herohan.uvcapp.fragment.DeviceListDialogFragment
 import com.herohan.uvcapp.fragment.VideoFormatDialogFragment
 import com.herohan.uvcapp.utils.SaveHelper
 import com.hjq.permissions.XXPermissions
+import com.hoho.android.usbserial.driver.UsbSerialPort
+import com.hoho.android.usbserial.driver.UsbSerialProber
 import com.serenegiant.opengl.renderer.MirrorMode
 import com.serenegiant.usb.Size
 import com.serenegiant.usb.USBMonitor
@@ -38,6 +41,7 @@ import java.io.File
 import java.text.DecimalFormat
 import java.util.Timer
 import java.util.TimerTask
+
 
 class MainActivity : AppCompatActivity() {
     private var mBinding: ActivityMainBinding? = null
@@ -166,7 +170,23 @@ class MainActivity : AppCompatActivity() {
                 .request { permissions: List<String?>?, all: Boolean -> toggleVideoRecord(!mIsRecording) }
         }
         mBinding?.fabCktx?.setOnClickListener { v: View? ->
-            
+            // Find all available drivers from attached devices.
+            val manager = getSystemService(USB_SERVICE) as UsbManager
+            val availableDrivers = UsbSerialProber.getDefaultProber().findAllDrivers(manager)
+            LogUtils.i(ckTag,"availableDrivers",availableDrivers.size)
+            if (availableDrivers.isEmpty()) {
+                return@setOnClickListener
+            }
+            // Open a connection to the first available driver.
+            val driver = availableDrivers[0]
+            LogUtils.i(ckTag, "driver", driver.device.deviceName)
+            val connection = manager.openDevice(driver.device)
+                ?: // add UsbManager.requestPermission(driver.getDevice(), ..) handling here
+                return@setOnClickListener
+            val port = driver.ports[0] // Most devices have just one port (port 0)
+            port.open(connection)
+            port.setParameters(9600, 8, UsbSerialPort.STOPBITS_1, UsbSerialPort.PARITY_NONE)
+            LogUtils.i(ckTag, "open", port.isOpen)
         }
     }
 
@@ -201,8 +221,7 @@ class MainActivity : AppCompatActivity() {
             return
         }
         mFormatDialog = VideoFormatDialogFragment(
-            mCameraHelper!!.supportedFormatList,
-            mCameraHelper!!.previewSize
+            mCameraHelper!!.supportedFormatList, mCameraHelper!!.previewSize
         )
         mFormatDialog!!.setOnVideoFormatSelectListener { size: Size ->
             if (mIsCameraConnected && !mCameraHelper!!.isRecording) {
@@ -291,9 +310,7 @@ class MainActivity : AppCompatActivity() {
         mBinding!!.viewMainPreview.setAspectRatio(mPreviewWidth, mPreviewHeight)
         mBinding!!.viewMainPreview.surfaceTextureListener = object : SurfaceTextureListener {
             override fun onSurfaceTextureAvailable(
-                surface: SurfaceTexture,
-                width: Int,
-                height: Int
+                surface: SurfaceTexture, width: Int, height: Int
             ) {
                 if (mCameraHelper != null) {
                     mCameraHelper!!.addSurface(surface, false)
@@ -301,9 +318,7 @@ class MainActivity : AppCompatActivity() {
             }
 
             override fun onSurfaceTextureSizeChanged(
-                surface: SurfaceTexture,
-                width: Int,
-                height: Int
+                surface: SurfaceTexture, width: Int, height: Int
             ) {
             }
 
@@ -363,9 +378,7 @@ class MainActivity : AppCompatActivity() {
             mCameraHelper?.openCamera(savedPreviewSize)
             mCameraHelper!!.setButtonCallback { button, state ->
                 Toast.makeText(
-                    this@MainActivity,
-                    "onButton(button=$button; state=$state)",
-                    Toast.LENGTH_SHORT
+                    this@MainActivity, "onButton(button=$button; state=$state)", Toast.LENGTH_SHORT
                 ).show()
             }
         }
@@ -495,12 +508,9 @@ class MainActivity : AppCompatActivity() {
             mCameraHelper!!.takePicture(options, object : OnImageCaptureCallback {
                 override fun onImageSaved(outputFileResults: ImageCapture.OutputFileResults) {
                     Toast.makeText(
-                        this@MainActivity,
-                        "save \"" + UriHelper.getPath(
-                            this@MainActivity,
-                            outputFileResults.savedUri
-                        ) + "\"",
-                        Toast.LENGTH_SHORT
+                        this@MainActivity, "save \"" + UriHelper.getPath(
+                            this@MainActivity, outputFileResults.savedUri
+                        ) + "\"", Toast.LENGTH_SHORT
                     ).show()
                 }
 
@@ -551,12 +561,9 @@ class MainActivity : AppCompatActivity() {
             override fun onVideoSaved(outputFileResults: VideoCapture.OutputFileResults) {
                 toggleVideoRecord(false)
                 Toast.makeText(
-                    this@MainActivity,
-                    "save \"" + UriHelper.getPath(
-                        this@MainActivity,
-                        outputFileResults.savedUri
-                    ) + "\"",
-                    Toast.LENGTH_SHORT
+                    this@MainActivity, "save \"" + UriHelper.getPath(
+                        this@MainActivity, outputFileResults.savedUri
+                    ) + "\"", Toast.LENGTH_SHORT
                 ).show()
             }
 
