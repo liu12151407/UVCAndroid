@@ -30,9 +30,8 @@ import com.herohan.uvcapp.fragment.CameraControlsDialogFragment
 import com.herohan.uvcapp.fragment.DeviceListDialogFragment
 import com.herohan.uvcapp.fragment.VideoFormatDialogFragment
 import com.herohan.uvcapp.utils.SaveHelper
-import com.herohan.uvcapp.utils.UsbHelper.Companion.instance
+import com.herohan.uvcapp.utils.UsbHelper
 import com.hjq.permissions.XXPermissions
-import com.hoho.android.usbserial.driver.UsbSerialDriver
 import com.serenegiant.opengl.renderer.MirrorMode
 import com.serenegiant.usb.Size
 import com.serenegiant.usb.USBMonitor
@@ -169,11 +168,11 @@ class MainActivity : AppCompatActivity() {
                 .request { permissions: List<String?>?, all: Boolean -> toggleVideoRecord(!mIsRecording) }
         }
         mBinding!!.fabCktx.setOnClickListener { v: View? ->
-            val items: List<UsbSerialDriver> = instance.availableDrivers(this)
+            val items= UsbHelper.instance.availableDrivers(this)
             LogUtils.i(ckTag, items.size)
-            if (items.size > 0) {
-                instance.driver = items[0]
-                val isOpen = instance.open()
+            if (items.isNotEmpty()) {
+                UsbHelper.instance.driver = items[0]
+                val isOpen = UsbHelper.instance.open()
                 LogUtils.i(ckTag, "串口打开", isOpen)
             }
         }

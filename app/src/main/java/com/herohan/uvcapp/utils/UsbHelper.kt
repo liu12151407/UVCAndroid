@@ -64,6 +64,7 @@ class UsbHelper private constructor() {
         val op = port?.isOpen == true
         if (op) {
             ToastUtils.showLong("设备已连接")
+            LogUtils.i(tag, driver?.device?.deviceName)
             return true
         }
         if (driver == null) {
