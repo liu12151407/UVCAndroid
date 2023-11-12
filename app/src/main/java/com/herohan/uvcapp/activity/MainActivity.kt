@@ -1,6 +1,7 @@
 package com.herohan.uvcapp.activity
 
 import android.Manifest
+import android.annotation.SuppressLint
 import android.content.Intent
 import android.content.res.ColorStateList
 import android.graphics.SurfaceTexture
@@ -16,6 +17,7 @@ import android.view.TextureView.SurfaceTextureListener
 import android.view.View
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
+import androidx.lifecycle.lifecycleScope
 import com.blankj.utilcode.util.LogUtils
 import com.google.gson.Gson
 import com.herohan.uvcapp.CameraHelper
@@ -29,13 +31,22 @@ import com.herohan.uvcapp.databinding.ActivityMainBinding
 import com.herohan.uvcapp.fragment.CameraControlsDialogFragment
 import com.herohan.uvcapp.fragment.DeviceListDialogFragment
 import com.herohan.uvcapp.fragment.VideoFormatDialogFragment
+import com.herohan.uvcapp.utils.HexUtils
 import com.herohan.uvcapp.utils.SaveHelper
 import com.herohan.uvcapp.utils.UsbHelper
+import com.herohan.uvcapp.utils.crc16Verify
 import com.hjq.permissions.XXPermissions
 import com.serenegiant.opengl.renderer.MirrorMode
 import com.serenegiant.usb.Size
 import com.serenegiant.usb.USBMonitor
 import com.serenegiant.utils.UriHelper
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.cancelAndJoin
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.isActive
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 import java.io.File
 import java.text.DecimalFormat
 import java.util.Timer
@@ -98,6 +109,10 @@ class MainActivity : AppCompatActivity() {
     }
 
     override fun onDestroy() {
+        runBlocking {
+            job?.cancelAndJoin()
+            UsbHelper.instance.close()
+        }
         super.onDestroy()
         clearCameraHelper()
     }
@@ -174,6 +189,7 @@ class MainActivity : AppCompatActivity() {
                 UsbHelper.instance.driver = items[0]
                 val isOpen = UsbHelper.instance.open()
                 LogUtils.i(ckTag, "串口打开", isOpen)
+                read()
             }
         }
     }
@@ -640,5 +656,55 @@ class MainActivity : AppCompatActivity() {
         private const val ONE_SECOND = 1000
         private const val DEFAULT_WIDTH = 640
         private const val DEFAULT_HEIGHT = 480
+    }
+
+
+
+    //   串口通讯相关 ========================================================
+
+
+    private var job: Job? = null
+
+    /**
+     * 读取串口数据
+     */
+    private fun read() {
+        lifecycleScope.launch(Dispatchers.Main) {
+            job?.cancelAndJoin()
+            job = taskRead
+            job?.start()
+            job?.join()
+            LogUtils.i(ckTag, "启动JOB任务成功")
+        }
+    }
+
+    /**
+     * Job 任务
+     */
+    private val taskRead = lifecycleScope.launch(Dispatchers.IO) {
+        try {
+            while (isActive) {
+                val dest = ByteArray(64)
+                val size = UsbHelper.instance.port?.read(dest, 50)
+                if (size != null && size > 0) {
+                    onDataReceived(dest, size)
+                }
+                delay(50)
+            }
+        } catch (e: Exception) {
+            LogUtils.e(ckTag, "启动JOB任务失败", e.message)
+        }
+    }
+
+    /**
+     * 接收信息
+     */
+    @SuppressLint("SetTextI18n")
+    private fun onDataReceived(buffer: ByteArray, size: Int) {
+        val byets = ByteArray(size)
+        for (i in byets.indices) {
+            byets[i] = buffer[i]
+        }
+        LogUtils.i(ckTag,byets.toString())
     }
 }
