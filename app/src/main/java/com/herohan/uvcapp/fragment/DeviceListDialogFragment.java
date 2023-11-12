@@ -37,7 +37,6 @@ public class DeviceListDialogFragment extends DialogFragment {
     public Dialog onCreateDialog(@Nullable Bundle savedInstanceState) {
         mBinding = FragmentDeviceListBinding.inflate(getLayoutInflater());
         initDeviceList();
-
         AlertDialog.Builder builder = new AlertDialog.Builder(requireActivity());
         builder.setTitle(R.string.device_list_dialog_title);
         builder.setView(mBinding.getRoot());
