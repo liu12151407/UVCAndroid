@@ -510,7 +510,7 @@ class MainActivity : AppCompatActivity(), SerialInputOutputManager.Listener {
             mCameraHelper!!.imageCaptureConfig.setJpegCompressionQuality(90)
     }
 
-    fun takePicture() {
+    private fun takePicture() {
         if (mIsRecording) {
             return
         }
@@ -691,7 +691,7 @@ class MainActivity : AppCompatActivity(), SerialInputOutputManager.Listener {
     }
 
     // 放大的点击事件
-    fun zoomIn() {
+    private fun zoomIn() {
         // 播放视频的view
         val textureView = mBinding?.viewMainPreview
         val matrix = Matrix()
@@ -716,7 +716,7 @@ class MainActivity : AppCompatActivity(), SerialInputOutputManager.Listener {
     }
 
     // 缩小的点击事件
-    fun zoomOut() {
+    private fun zoomOut() {
         // 播放视频的view
         val textureView = mBinding?.viewMainPreview
         val matrix = Matrix()
