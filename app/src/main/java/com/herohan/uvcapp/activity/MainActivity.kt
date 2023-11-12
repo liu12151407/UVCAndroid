@@ -33,6 +33,7 @@ import com.herohan.uvcapp.utils.SaveHelper
 import com.hjq.permissions.XXPermissions
 import com.hoho.android.usbserial.driver.UsbSerialPort
 import com.hoho.android.usbserial.driver.UsbSerialProber
+import com.hoho.android.usbserial.util.SerialInputOutputManager
 import com.serenegiant.opengl.renderer.MirrorMode
 import com.serenegiant.usb.Size
 import com.serenegiant.usb.USBMonitor
@@ -43,7 +44,7 @@ import java.util.Timer
 import java.util.TimerTask
 
 
-class MainActivity : AppCompatActivity() {
+class MainActivity : AppCompatActivity(), SerialInputOutputManager.Listener {
     private var mBinding: ActivityMainBinding? = null
 
     /**
@@ -170,26 +171,30 @@ class MainActivity : AppCompatActivity() {
                 .request { permissions: List<String?>?, all: Boolean -> toggleVideoRecord(!mIsRecording) }
         }
         mBinding?.fabCktx?.setOnClickListener { v: View? ->
-            // Find all available drivers from attached devices.
-            val manager = getSystemService(USB_SERVICE) as UsbManager
-            val availableDrivers = UsbSerialProber.getDefaultProber().findAllDrivers(manager)
-            LogUtils.i(ckTag,"availableDrivers",availableDrivers.size)
-            if (availableDrivers.isEmpty()) {
-                return@setOnClickListener
-            }
-            // Open a connection to the first available driver.
-            val driver = availableDrivers[0]
-            LogUtils.i(ckTag, "driver", driver.device.deviceName)
-            val connection = manager.openDevice(driver.device)
-                ?: // add UsbManager.requestPermission(driver.getDevice(), ..) handling here
-                return@setOnClickListener
-            val port = driver.ports[0] // Most devices have just one port (port 0)
-            port.open(connection)
-            port.setParameters(9600, 8, UsbSerialPort.STOPBITS_1, UsbSerialPort.PARITY_NONE)
-            LogUtils.i(ckTag, "open", port.isOpen)
+            tryOpen()
         }
     }
-
+    //串口方法
+    private var port:UsbSerialPort?=null
+    private fun tryOpen(){
+        // Find all available drivers from attached devices.
+        val manager = getSystemService(USB_SERVICE) as UsbManager
+        val availableDrivers = UsbSerialProber.getDefaultProber().findAllDrivers(manager)
+        LogUtils.i(ckTag,"availableDrivers",availableDrivers.size)
+        if (availableDrivers.isEmpty()) {
+            return
+        }
+        // Open a connection to the first available driver.
+        val driver = availableDrivers[0]
+        LogUtils.i(ckTag, "driver", driver.device.deviceName)
+        val connection = manager.openDevice(driver.device)
+            ?: // add UsbManager.requestPermission(driver.getDevice(), ..) handling here
+            return
+        port = driver.ports[0] // Most devices have just one port (port 0)
+        port?.open(connection)
+        port?.setParameters(9600, 8, UsbSerialPort.STOPBITS_1, UsbSerialPort.PARITY_NONE)
+        LogUtils.i(ckTag, "open", port?.isOpen)
+    }
     private fun showCameraControlsDialog() {
         if (mControlsDialog == null) {
             mControlsDialog = CameraControlsDialogFragment(mCameraHelper)
@@ -639,5 +644,16 @@ class MainActivity : AppCompatActivity() {
         private const val ONE_SECOND = 1000
         private const val DEFAULT_WIDTH = 640
         private const val DEFAULT_HEIGHT = 480
+    }
+
+    /**
+     * 串口监听
+     */
+    override fun onNewData(data: ByteArray?) {
+        LogUtils.i(ckTag,"data",data)
+    }
+
+    override fun onRunError(e: java.lang.Exception?) {
+        LogUtils.e(ckTag,e?.message)
     }
 }
