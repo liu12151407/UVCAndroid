@@ -8,6 +8,7 @@ import android.graphics.Matrix
 import android.graphics.SurfaceTexture
 import android.hardware.usb.UsbDevice
 import android.hardware.usb.UsbManager
+import android.os.Build
 import android.os.Bundle
 import android.os.SystemClock
 import android.text.TextUtils
@@ -17,6 +18,7 @@ import android.view.MenuItem
 import android.view.TextureView.SurfaceTextureListener
 import android.view.View
 import android.widget.Toast
+import androidx.annotation.RequiresApi
 import androidx.appcompat.app.AppCompatActivity
 import com.blankj.utilcode.util.LogUtils
 import com.blankj.utilcode.util.ToastUtils
@@ -60,15 +62,13 @@ class MainActivity : AppCompatActivity(), SerialInputOutputManager.Listener {
      * Camera preview height
      */
     private var mPreviewHeight = DEFAULT_HEIGHT
-    private var mPreviewRotation = 0
     private var mCameraHelper: ICameraHelper? = null
     private var mUsbDevice: UsbDevice? = null
     private val mStateCallback: ICameraHelper.StateCallback = MyCameraHelperCallback()
     private var mIsCameraConnected = false
-    private var mControlsDialog: CameraControlsDialogFragment? = null
-    private var mDeviceListDialog: DeviceListDialogFragment? = null
-    private var mFormatDialog: VideoFormatDialogFragment? = null
     private val ckTag = "==UsbHelper=="
+
+    @RequiresApi(Build.VERSION_CODES.R)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         mBinding = ActivityMainBinding.inflate(layoutInflater)
@@ -105,22 +105,9 @@ class MainActivity : AppCompatActivity(), SerialInputOutputManager.Listener {
         return true
     }
 
-    override fun onOptionsItemSelected(item: MenuItem): Boolean {
-        // Handle action bar item clicks here. The action bar will
-        // automatically handle clicks on the Home/Up button, so long
-        // as you specify a parent activity in AndroidManifest.xml.
-        val id = item.itemId
-        if (id == R.id.action_device) {
-            showDeviceListDialog()
-        }
-        return true
-    }
-
     private fun setListeners() {
         mBinding!!.fabPicture.setOnClickListener { v: View? ->
-            XXPermissions.with(this).permission(
-                Manifest.permission.MANAGE_EXTERNAL_STORAGE
-            ).request { permissions: List<String?>?, all: Boolean -> takePicture() }
+            takePicture()
         }
         mBinding?.fabFd?.setOnClickListener { v: View? ->
             zoomIn()
@@ -174,97 +161,12 @@ class MainActivity : AppCompatActivity(), SerialInputOutputManager.Listener {
         }
     }
 
-    private fun showCameraControlsDialog() {
-        if (mControlsDialog == null) {
-            mControlsDialog = CameraControlsDialogFragment(mCameraHelper)
-        }
-        // When DialogFragment is not showing
-        if (!mControlsDialog!!.isAdded) {
-            mControlsDialog!!.show(supportFragmentManager, "camera_controls")
-        }
-    }
 
-    private fun showDeviceListDialog() {
-        if (mDeviceListDialog != null && mDeviceListDialog!!.isAdded) {
-            return
-        }
-        mDeviceListDialog =
-            DeviceListDialogFragment(mCameraHelper, if (mIsCameraConnected) mUsbDevice else null)
-        mDeviceListDialog!!.setOnDeviceItemSelectListener { usbDevice: UsbDevice? ->
-            if (mIsCameraConnected) {
-                mCameraHelper!!.closeCamera()
-            }
-            mUsbDevice = usbDevice
-            selectDevice(mUsbDevice)
-        }
-        mDeviceListDialog!!.show(supportFragmentManager, "device_list")
-    }
-
-    private fun showVideoFormatDialog() {
-        if (mFormatDialog != null && mFormatDialog!!.isAdded) {
-            return
-        }
-        mFormatDialog = VideoFormatDialogFragment(
-            mCameraHelper!!.supportedFormatList, mCameraHelper!!.previewSize
-        )
-        mFormatDialog!!.setOnVideoFormatSelectListener { size: Size ->
-            if (mIsCameraConnected && !mCameraHelper!!.isRecording) {
-                mCameraHelper!!.stopPreview()
-                mCameraHelper!!.previewSize = size
-                mCameraHelper!!.startPreview()
-                resizePreviewView(size)
-                // save selected preview size
-                setSavedPreviewSize(size)
-            }
-        }
-        mFormatDialog!!.show(supportFragmentManager, "video_format")
-    }
-
-    private fun closeAllDialogFragment() {
-        if (mControlsDialog != null && mControlsDialog!!.isAdded) {
-            mControlsDialog!!.dismiss()
-        }
-        if (mDeviceListDialog != null && mDeviceListDialog!!.isAdded) {
-            mDeviceListDialog!!.dismiss()
-        }
-        if (mFormatDialog != null && mFormatDialog!!.isAdded) {
-            mFormatDialog?.dismiss()
-        }
-    }
-
-    private fun safelyEject() {
-        if (mCameraHelper != null) {
-            mCameraHelper!!.closeCamera()
-        }
-    }
-
-    private fun rotateBy(angle: Int) {
-        mPreviewRotation += angle
-        mPreviewRotation %= 360
-        if (mPreviewRotation < 0) {
-            mPreviewRotation += 360
-        }
-        if (mCameraHelper != null) {
-            mCameraHelper!!.previewConfig =
-                mCameraHelper!!.previewConfig.setRotation(mPreviewRotation)
-        }
-    }
-
-    private fun flipHorizontally() {
-        if (mCameraHelper != null) {
-            mCameraHelper!!.previewConfig =
-                mCameraHelper!!.previewConfig.setMirror(MirrorMode.MIRROR_HORIZONTAL)
-        }
-    }
-
-    private fun flipVertically() {
-        if (mCameraHelper != null) {
-            mCameraHelper!!.previewConfig =
-                mCameraHelper!!.previewConfig.setMirror(MirrorMode.MIRROR_VERTICAL)
-        }
-    }
-
+    @RequiresApi(Build.VERSION_CODES.R)
     private fun checkCameraHelper() {
+        XXPermissions.with(this).permission(
+            Manifest.permission.MANAGE_EXTERNAL_STORAGE
+        ).request { permissions: List<String?>?, all: Boolean -> {} }
         if (!mIsCameraConnected) {
             clearCameraHelper()
         }
@@ -332,6 +234,7 @@ class MainActivity : AppCompatActivity(), SerialInputOutputManager.Listener {
         if (DEBUG) {
             Log.v(TAG, "selectDevice:device=" + device!!.deviceName)
         }
+        mUsbDevice = device
         XXPermissions.with(this).permission(Manifest.permission.CAMERA)
             .request { permissions: List<String?>?, all: Boolean ->
                 mIsCameraConnected = false
@@ -394,7 +297,6 @@ class MainActivity : AppCompatActivity(), SerialInputOutputManager.Listener {
             }
             mIsCameraConnected = false
             updateUIControls()
-            closeAllDialogFragment()
             mBinding?.tvXj?.text = "相机:相机关闭"
         }
 
