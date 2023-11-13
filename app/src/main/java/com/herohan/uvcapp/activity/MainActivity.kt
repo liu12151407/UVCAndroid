@@ -1,6 +1,7 @@
 package com.herohan.uvcapp.activity
 
 import android.Manifest
+import android.annotation.SuppressLint
 import android.content.Intent
 import android.content.res.ColorStateList
 import android.graphics.Matrix
@@ -18,6 +19,7 @@ import android.view.View
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import com.blankj.utilcode.util.LogUtils
+import com.blankj.utilcode.util.ToastUtils
 import com.google.gson.Gson
 import com.herohan.uvcapp.CameraHelper
 import com.herohan.uvcapp.ICameraHelper
@@ -183,27 +185,46 @@ class MainActivity : AppCompatActivity(), SerialInputOutputManager.Listener {
 
     //串口方法
     private var port: UsbSerialPort? = null
+
+    @SuppressLint("SetTextI18n")
     private fun tryOpen() {
-        // Find all available drivers from attached devices.
-        val manager = getSystemService(USB_SERVICE) as UsbManager
-        val availableDrivers = UsbSerialProber.getDefaultProber().findAllDrivers(manager)
-        LogUtils.i(ckTag, "availableDrivers", availableDrivers.size)
-        if (availableDrivers.isEmpty()) {
-            return
+        try {
+            // Find all available drivers from attached devices.
+            val manager = getSystemService(USB_SERVICE) as UsbManager
+            val availableDrivers = UsbSerialProber.getDefaultProber().findAllDrivers(manager)
+            LogUtils.i(ckTag, "availableDrivers", availableDrivers.size)
+            if (availableDrivers.isEmpty()) {
+                //更新状态
+                mBinding?.tvCk?.text = "串口:未发现"
+                return
+            }
+            // Open a connection to the first available driver.
+            val driver = availableDrivers[0]
+            LogUtils.i(ckTag, "driver", driver.device.deviceName)
+            if (manager.hasPermission(driver.device)) {
+                val connection = manager.openDevice(driver.device)
+                if (connection == null) {
+                    //更新状态
+                    mBinding?.tvCk?.text = "串口:连接失败"
+                    return
+                }
+                port = driver.ports[0] // Most devices have just one port (port 0)
+                port?.open(connection)
+                port?.setParameters(9600, 8, UsbSerialPort.STOPBITS_1, UsbSerialPort.PARITY_NONE)
+                LogUtils.i(ckTag, "open", port?.isOpen)
+                //监听输出数据
+                val usbIoManager = SerialInputOutputManager(port, this)
+                usbIoManager.start()
+                //更新状态
+                mBinding?.tvCk?.text = "串口:" + port?.isOpen
+            } else {
+                mBinding?.tvCk?.text = "串口:暂无权限"
+            }
+        } catch (e: Exception) {
+            ToastUtils.showLong(e.message)
+            //更新状态
+            mBinding?.tvCk?.text = "串口:" + e.message
         }
-        // Open a connection to the first available driver.
-        val driver = availableDrivers[0]
-        LogUtils.i(ckTag, "driver", driver.device.deviceName)
-        val connection = manager.openDevice(driver.device)
-            ?: // add UsbManager.requestPermission(driver.getDevice(), ..) handling here
-            return
-        port = driver.ports[0] // Most devices have just one port (port 0)
-        port?.open(connection)
-        port?.setParameters(9600, 8, UsbSerialPort.STOPBITS_1, UsbSerialPort.PARITY_NONE)
-        LogUtils.i(ckTag, "open", port?.isOpen)
-        //监听输出数据
-        val usbIoManager = SerialInputOutputManager(port, this)
-        usbIoManager.start()
     }
 
     private fun showCameraControlsDialog() {
@@ -377,11 +398,13 @@ class MainActivity : AppCompatActivity(), SerialInputOutputManager.Listener {
     }
 
     private inner class MyCameraHelperCallback : ICameraHelper.StateCallback {
+        @SuppressLint("SetTextI18n")
         override fun onAttach(device: UsbDevice) {
             if (DEBUG) {
                 Log.v(TAG, "onAttach:device=" + device.deviceName)
             }
             attachNewDevice(device)
+            mBinding?.tvXj?.text="相机:"+device.deviceName
         }
 
         /**
@@ -397,6 +420,7 @@ class MainActivity : AppCompatActivity(), SerialInputOutputManager.Listener {
                     this@MainActivity, "onButton(button=$button; state=$state)", Toast.LENGTH_SHORT
                 ).show()
             }
+            mBinding?.tvXj?.text="相机:设备打开"
         }
 
         override fun onCameraOpen(device: UsbDevice) {
@@ -404,7 +428,6 @@ class MainActivity : AppCompatActivity(), SerialInputOutputManager.Listener {
                 Log.v(TAG, "onCameraOpen:device=" + device.deviceName)
             }
             mCameraHelper!!.startPreview()
-
             // After connecting to the camera, you can get preview size of the camera
             val size = mCameraHelper!!.previewSize
             size?.let { resizePreviewView(it) }
@@ -413,6 +436,7 @@ class MainActivity : AppCompatActivity(), SerialInputOutputManager.Listener {
             }
             mIsCameraConnected = true
             updateUIControls()
+            mBinding?.tvXj?.text="相机:相机打开"
         }
 
         override fun onCameraClose(device: UsbDevice) {
@@ -428,12 +452,14 @@ class MainActivity : AppCompatActivity(), SerialInputOutputManager.Listener {
             mIsCameraConnected = false
             updateUIControls()
             closeAllDialogFragment()
+            mBinding?.tvXj?.text="相机:相机关闭"
         }
 
         override fun onDeviceClose(device: UsbDevice) {
             if (DEBUG) {
                 Log.v(TAG, "onDeviceClose:device=" + device.deviceName)
             }
+            mBinding?.tvXj?.text="相机:设备关闭"
         }
 
         override fun onDetach(device: UsbDevice) {
@@ -443,6 +469,7 @@ class MainActivity : AppCompatActivity(), SerialInputOutputManager.Listener {
             if (device == mUsbDevice) {
                 mUsbDevice = null
             }
+            mBinding?.tvXj?.text="相机:设备断开"
         }
 
         override fun onCancel(device: UsbDevice) {
@@ -452,6 +479,7 @@ class MainActivity : AppCompatActivity(), SerialInputOutputManager.Listener {
             if (device == mUsbDevice) {
                 mUsbDevice = null
             }
+            mBinding?.tvXj?.text="相机:设备取消"
         }
     }
 
