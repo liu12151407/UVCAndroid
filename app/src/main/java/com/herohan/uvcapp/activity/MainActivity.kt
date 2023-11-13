@@ -342,7 +342,6 @@ class MainActivity : AppCompatActivity(), SerialInputOutputManager.Listener {
             mCameraHelper = null
         }
     }
-
     private fun initPreviewView() {
         mBinding!!.viewMainPreview.setAspectRatio(mPreviewWidth, mPreviewHeight)
         mBinding!!.viewMainPreview.surfaceTextureListener = object : SurfaceTextureListener {
