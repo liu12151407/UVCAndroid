@@ -64,10 +64,6 @@ class MainActivity : AppCompatActivity(), SerialInputOutputManager.Listener {
     private var mCameraHelper: ICameraHelper? = null
     private var mUsbDevice: UsbDevice? = null
     private val mStateCallback: ICameraHelper.StateCallback = MyCameraHelperCallback()
-    private var mRecordStartTime: Long = 0
-    private var mRecordTimer: Timer? = null
-    private var mDecimalFormat: DecimalFormat? = null
-    private var mIsRecording = false
     private var mIsCameraConnected = false
     private var mControlsDialog: CameraControlsDialogFragment? = null
     private var mDeviceListDialog: DeviceListDialogFragment? = null
@@ -98,13 +94,6 @@ class MainActivity : AppCompatActivity(), SerialInputOutputManager.Listener {
         initPreviewView()
     }
 
-    override fun onStop() {
-        super.onStop()
-        if (mIsRecording) {
-            toggleVideoRecord(false)
-        }
-    }
-
     override fun onDestroy() {
         super.onDestroy()
         clearCameraHelper()
@@ -121,46 +110,10 @@ class MainActivity : AppCompatActivity(), SerialInputOutputManager.Listener {
         // automatically handle clicks on the Home/Up button, so long
         // as you specify a parent activity in AndroidManifest.xml.
         val id = item.itemId
-        if (id == R.id.action_control) {
-            showCameraControlsDialog()
-        } else if (id == R.id.action_device) {
+        if (id == R.id.action_device) {
             showDeviceListDialog()
-        } else if (id == R.id.action_safely_eject) {
-            safelyEject()
-        } else if (id == R.id.action_settings) {
-        } else if (id == R.id.action_video_format) {
-            showVideoFormatDialog()
-        } else if (id == R.id.action_rotate_90_CW) {
-            rotateBy(90)
-        } else if (id == R.id.action_rotate_90_CCW) {
-            rotateBy(-90)
-        } else if (id == R.id.action_flip_horizontally) {
-            flipHorizontally()
-        } else if (id == R.id.action_flip_vertically) {
-            flipVertically()
         }
         return true
-    }
-
-    override fun onPrepareOptionsMenu(menu: Menu): Boolean {
-//        if (mIsCameraConnected) {
-//            menu.findItem(R.id.action_control).setVisible(true);
-//            menu.findItem(R.id.action_safely_eject).setVisible(true);
-//            menu.findItem(R.id.action_video_format).setVisible(true);
-//            menu.findItem(R.id.action_rotate_90_CW).setVisible(true);
-//            menu.findItem(R.id.action_rotate_90_CCW).setVisible(true);
-//            menu.findItem(R.id.action_flip_horizontally).setVisible(true);
-//            menu.findItem(R.id.action_flip_vertically).setVisible(true);
-//        } else {
-//            menu.findItem(R.id.action_control).setVisible(false);
-//            menu.findItem(R.id.action_safely_eject).setVisible(false);
-//            menu.findItem(R.id.action_video_format).setVisible(false);
-//            menu.findItem(R.id.action_rotate_90_CW).setVisible(false);
-//            menu.findItem(R.id.action_rotate_90_CCW).setVisible(false);
-//            menu.findItem(R.id.action_flip_horizontally).setVisible(false);
-//            menu.findItem(R.id.action_flip_vertically).setVisible(false);
-//        }
-        return super.onPrepareOptionsMenu(menu)
     }
 
     private fun setListeners() {
@@ -168,12 +121,6 @@ class MainActivity : AppCompatActivity(), SerialInputOutputManager.Listener {
             XXPermissions.with(this).permission(
                 Manifest.permission.MANAGE_EXTERNAL_STORAGE
             ).request { permissions: List<String?>?, all: Boolean -> takePicture() }
-        }
-        mBinding!!.fabVideo.setOnClickListener { v: View? ->
-            XXPermissions.with(this).permission(
-                Manifest.permission.MANAGE_EXTERNAL_STORAGE
-            ).permission(Manifest.permission.RECORD_AUDIO)
-                .request { permissions: List<String?>?, all: Boolean -> toggleVideoRecord(!mIsRecording) }
         }
         mBinding?.fabFd?.setOnClickListener { v: View? ->
             zoomIn()
@@ -329,7 +276,6 @@ class MainActivity : AppCompatActivity(), SerialInputOutputManager.Listener {
             mCameraHelper = CameraHelper()
             mCameraHelper?.setStateCallback(mStateCallback)
             setCustomImageCaptureConfig()
-            setCustomVideoCaptureConfig()
         }
     }
 
@@ -342,6 +288,7 @@ class MainActivity : AppCompatActivity(), SerialInputOutputManager.Listener {
             mCameraHelper = null
         }
     }
+
     private fun initPreviewView() {
         mBinding!!.viewMainPreview.setAspectRatio(mPreviewWidth, mPreviewHeight)
         mBinding!!.viewMainPreview.surfaceTextureListener = object : SurfaceTextureListener {
@@ -403,7 +350,7 @@ class MainActivity : AppCompatActivity(), SerialInputOutputManager.Listener {
                 Log.v(TAG, "onAttach:device=" + device.deviceName)
             }
             attachNewDevice(device)
-            mBinding?.tvXj?.text="相机:"+device.deviceName
+            mBinding?.tvXj?.text = "相机:" + device.deviceName
         }
 
         /**
@@ -419,7 +366,7 @@ class MainActivity : AppCompatActivity(), SerialInputOutputManager.Listener {
                     this@MainActivity, "onButton(button=$button; state=$state)", Toast.LENGTH_SHORT
                 ).show()
             }
-            mBinding?.tvXj?.text="相机:设备打开"
+            mBinding?.tvXj?.text = "相机:设备打开"
         }
 
         override fun onCameraOpen(device: UsbDevice) {
@@ -435,15 +382,12 @@ class MainActivity : AppCompatActivity(), SerialInputOutputManager.Listener {
             }
             mIsCameraConnected = true
             updateUIControls()
-            mBinding?.tvXj?.text="相机:相机打开"
+            mBinding?.tvXj?.text = "相机:相机打开"
         }
 
         override fun onCameraClose(device: UsbDevice) {
             if (DEBUG) {
                 Log.v(TAG, "onCameraClose:device=" + device.deviceName)
-            }
-            if (mIsRecording) {
-                toggleVideoRecord(false)
             }
             if (mCameraHelper != null && mBinding!!.viewMainPreview.surfaceTexture != null) {
                 mCameraHelper!!.removeSurface(mBinding!!.viewMainPreview.surfaceTexture)
@@ -451,14 +395,14 @@ class MainActivity : AppCompatActivity(), SerialInputOutputManager.Listener {
             mIsCameraConnected = false
             updateUIControls()
             closeAllDialogFragment()
-            mBinding?.tvXj?.text="相机:相机关闭"
+            mBinding?.tvXj?.text = "相机:相机关闭"
         }
 
         override fun onDeviceClose(device: UsbDevice) {
             if (DEBUG) {
                 Log.v(TAG, "onDeviceClose:device=" + device.deviceName)
             }
-            mBinding?.tvXj?.text="相机:设备关闭"
+            mBinding?.tvXj?.text = "相机:设备关闭"
         }
 
         override fun onDetach(device: UsbDevice) {
@@ -468,7 +412,7 @@ class MainActivity : AppCompatActivity(), SerialInputOutputManager.Listener {
             if (device == mUsbDevice) {
                 mUsbDevice = null
             }
-            mBinding?.tvXj?.text="相机:设备断开"
+            mBinding?.tvXj?.text = "相机:设备断开"
         }
 
         override fun onCancel(device: UsbDevice) {
@@ -478,7 +422,7 @@ class MainActivity : AppCompatActivity(), SerialInputOutputManager.Listener {
             if (device == mUsbDevice) {
                 mUsbDevice = null
             }
-            mBinding?.tvXj?.text="相机:设备取消"
+            mBinding?.tvXj?.text = "相机:设备取消"
         }
     }
 
@@ -496,21 +440,10 @@ class MainActivity : AppCompatActivity(), SerialInputOutputManager.Listener {
                 mBinding!!.viewMainPreview.visibility = View.VISIBLE
                 mBinding!!.tvConnectUSBCameraTip.visibility = View.GONE
                 mBinding!!.fabPicture.visibility = View.VISIBLE
-                //                mBinding.fabVideo.setVisibility(View.VISIBLE);
-
-                // Update record button
-                var colorId = R.color.WHITE
-                if (mIsRecording) {
-                    colorId = R.color.RED
-                }
-                val colorStateList = ColorStateList.valueOf(resources.getColor(colorId))
-                mBinding!!.fabVideo.supportImageTintList = colorStateList
             } else {
                 mBinding!!.viewMainPreview.visibility = View.GONE
                 mBinding!!.tvConnectUSBCameraTip.visibility = View.VISIBLE
                 mBinding!!.fabPicture.visibility = View.GONE
-                mBinding!!.fabVideo.visibility = View.GONE
-                mBinding!!.tvVideoRecordTime.visibility = View.GONE
             }
             invalidateOptionsMenu()
         }
@@ -542,9 +475,6 @@ class MainActivity : AppCompatActivity(), SerialInputOutputManager.Listener {
     }
 
     private fun takePicture() {
-        if (mIsRecording) {
-            return
-        }
         try {
             val file = File(SaveHelper.getSavePhotoPath())
             val options = ImageCapture.OutputFileOptions.Builder(file).build()
@@ -564,114 +494,6 @@ class MainActivity : AppCompatActivity(), SerialInputOutputManager.Listener {
         } catch (e: Exception) {
             Log.e(TAG, e.localizedMessage, e)
         }
-    }
-
-    fun toggleVideoRecord(isRecording: Boolean) {
-        try {
-            if (isRecording) {
-                if (mIsCameraConnected && mCameraHelper != null && !mCameraHelper!!.isRecording) {
-                    startRecord()
-                }
-            } else {
-                if (mIsCameraConnected && mCameraHelper != null && mCameraHelper!!.isRecording) {
-                    stopRecord()
-                }
-                stopRecordTimer()
-            }
-        } catch (e: Exception) {
-            Log.e(TAG, e.localizedMessage, e)
-            stopRecordTimer()
-        }
-        mIsRecording = isRecording
-        updateUIControls()
-    }
-
-    private fun setCustomVideoCaptureConfig() {
-        mCameraHelper!!.videoCaptureConfig =
-            mCameraHelper!!.videoCaptureConfig //                        .setAudioCaptureEnable(false)
-                .setBitRate((1024 * 1024 * 25 * 0.25).toInt()).setVideoFrameRate(25)
-                .setIFrameInterval(1)
-    }
-
-    private fun startRecord() {
-        val file = File(SaveHelper.getSaveVideoPath())
-        val options = VideoCapture.OutputFileOptions.Builder(file).build()
-        mCameraHelper!!.startRecording(options, object : OnVideoCaptureCallback {
-            override fun onStart() {
-                startRecordTimer()
-            }
-
-            override fun onVideoSaved(outputFileResults: VideoCapture.OutputFileResults) {
-                toggleVideoRecord(false)
-                Toast.makeText(
-                    this@MainActivity, "save \"" + UriHelper.getPath(
-                        this@MainActivity, outputFileResults.savedUri
-                    ) + "\"", Toast.LENGTH_SHORT
-                ).show()
-            }
-
-            override fun onError(videoCaptureError: Int, message: String, cause: Throwable?) {
-                toggleVideoRecord(false)
-                Toast.makeText(this@MainActivity, message, Toast.LENGTH_LONG).show()
-            }
-        })
-    }
-
-    private fun stopRecord() {
-        mCameraHelper!!.stopRecording()
-    }
-
-    private fun startRecordTimer() {
-        runOnUiThread { mBinding!!.tvVideoRecordTime.visibility = View.VISIBLE }
-
-        // Set “00:00:00” to record time TextView
-        setVideoRecordTimeText(formatTime(0))
-
-        // Start Record Timer
-        mRecordStartTime = SystemClock.elapsedRealtime()
-        mRecordTimer = Timer()
-        //The timer is refreshed every quarter second
-        mRecordTimer!!.scheduleAtFixedRate(object : TimerTask() {
-            override fun run() {
-                val recordTime = (SystemClock.elapsedRealtime() - mRecordStartTime) / 1000
-                if (recordTime > 0) {
-                    setVideoRecordTimeText(formatTime(recordTime))
-                }
-            }
-        }, QUARTER_SECOND.toLong(), QUARTER_SECOND.toLong())
-    }
-
-    private fun stopRecordTimer() {
-        runOnUiThread { mBinding!!.tvVideoRecordTime.visibility = View.GONE }
-
-        // Stop Record Timer
-        mRecordStartTime = 0
-        if (mRecordTimer != null) {
-            mRecordTimer!!.cancel()
-            mRecordTimer = null
-        }
-        // Set “00:00:00” to record time TextView
-        setVideoRecordTimeText(formatTime(0))
-    }
-
-    private fun setVideoRecordTimeText(timeText: String) {
-        runOnUiThread { mBinding!!.tvVideoRecordTime.text = timeText }
-    }
-
-    /**
-     * 将秒转化为 HH:mm:ss 的格式
-     *
-     * @param time 秒
-     * @return
-     */
-    private fun formatTime(time: Long): String {
-        if (mDecimalFormat == null) {
-            mDecimalFormat = DecimalFormat("00")
-        }
-        val hh = mDecimalFormat!!.format(time / 3600)
-        val mm = mDecimalFormat!!.format(time % 3600 / 60)
-        val ss = mDecimalFormat!!.format(time % 60)
-        return "$hh:$mm:$ss"
     }
 
     companion object {

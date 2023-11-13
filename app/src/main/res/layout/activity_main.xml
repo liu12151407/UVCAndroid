@@ -44,29 +44,6 @@
             android:textColor="@color/white"
             android:textSize="20dp" />
 
-        <TextView
-            android:id="@+id/tvVideoRecordTime"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_centerHorizontal="true"
-            android:layout_marginTop="20dp"
-            android:drawableLeft="@drawable/ic_record_red_dot"
-            android:drawablePadding="5dp"
-            android:textColor="@color/white"
-            android:textSize="14sp"
-            android:visibility="gone"
-            tools:text="99:99:99" />
-
-        <com.google.android.material.floatingactionbutton.FloatingActionButton
-            android:id="@+id/fabVideo"
-            style="@style/MainFloatingActionButton"
-            android:layout_above="@id/fabPicture"
-            android:layout_alignParentRight="true"
-            android:layout_marginEnd="@dimen/fab_margin"
-            android:layout_marginBottom="16dp"
-            android:visibility="invisible"
-            app:srcCompat="@drawable/ic_switch_video" />
-
         <com.google.android.material.floatingactionbutton.FloatingActionButton
             android:id="@+id/fabPicture"
             style="@style/MainFloatingActionButton"
