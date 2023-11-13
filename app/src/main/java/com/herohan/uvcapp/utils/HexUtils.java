@@ -3,17 +3,6 @@ package com.herohan.uvcapp.utils;
 import java.io.ByteArrayOutputStream;
 import java.math.BigInteger;
 
-/**
- * ***********************************************
- * 包路径：com.ut.usbserial.tools
- * 类描述：
- * 创建人：Liu Yinglong[PHONE：13281160095]
- * 创建时间：2022/11/07
- * 修改人：
- * 修改时间：2022/11/07
- * 修改备注：
- * ***********************************************
- */
 public class HexUtils {
 
     /**
